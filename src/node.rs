@@ -23,21 +23,6 @@ impl<T> Node<T> {
         Self(Rc::new(internal))
     }
 
-    // pub fn add_all_children(&mut self, children_data: impl IntoIterator<Item = T>) {
-    //     let this_node = self.get_rc();
-    //     let mut children = children_data
-    //         .into_iter()
-    //         .map(|c| NodeInternal {
-    //             data: c,
-    //             parent: Rc::downgrade(this_node),
-    //             children: RefCell::new(Vec::new()),
-    //         })
-    //         .map(|i| Self(Rc::new(i)))
-    //         .collect();
-
-    //     this_node.children.borrow_mut().append(&mut children);
-    // }
-
     pub fn add_all_children(&self, children_data: impl IntoIterator<Item = T>) {
         let this_node = self.get_rc();
         let mut children = children_data
@@ -51,20 +36,6 @@ impl<T> Node<T> {
             .collect();
 
         this_node.children.borrow_mut().append(&mut children);
-    }
-
-    pub fn add_child(&mut self, mut child_data: T) {
-        let internal = NodeInternal {
-            data: child_data,
-            parent: Rc::downgrade(self.get_rc()),
-            children: RefCell::new(Vec::new()),
-        };
-
-        // let x = Rc::get_mut(self.get_rc()).expect("get_mut failed in add_child");
-        self.get_rc()
-            .children
-            .borrow_mut()
-            .push(Self(Rc::new(internal)));
     }
 
     pub fn data(&self) -> &T {
@@ -93,6 +64,19 @@ impl<T> Node<T> {
 
     fn get_rc_clone(&self) -> Rc<NodeInternal<T>> {
         self.0.clone()
+    }
+
+    fn add_child(&mut self, mut child_data: T) {
+        let internal = NodeInternal {
+            data: child_data,
+            parent: Rc::downgrade(self.get_rc()),
+            children: RefCell::new(Vec::new()),
+        };
+
+        self.get_rc()
+            .children
+            .borrow_mut()
+            .push(Self(Rc::new(internal)));
     }
 }
 
@@ -200,5 +184,16 @@ mod tests {
         let parent = root.parent();
 
         assert!(parent.is_none());
+    }
+
+    #[test]
+    fn complex_walk_operations() {
+        let root = Node::new(1);
+
+        root.add_all_children(vec![2, 3, 4]);
+
+        for child in root.children().iter() {
+            child.add_all_children(vec![5, 6, 7, 8]);
+        }
     }
 }
