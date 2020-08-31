@@ -23,6 +23,10 @@ impl<T> Node<T> {
         Self(Rc::new(internal))
     }
 
+    pub fn clone_rc(&self) -> Self {
+        Self(self.get_rc_clone())
+    }
+
     pub fn add_all_children(&self, children_data: impl IntoIterator<Item = T>) {
         let this_node = self.get_rc();
         let mut children = children_data
@@ -188,12 +192,32 @@ mod tests {
 
     #[test]
     fn complex_walk_operations() {
-        let root = Node::new(1);
+        let mut v = 0;
+        let mut s = 0;
+        let sum = &mut s;
+        let mut i = move || {
+            v += 1;
+            *sum += v;
+            v
+        };
 
-        root.add_all_children(vec![2, 3, 4]);
+        let root = Node::new(i());
+
+        root.add_all_children(vec![i(), i(), i()]);
 
         for child in root.children().iter() {
-            child.add_all_children(vec![5, 6, 7, 8]);
+            child.add_all_children(vec![i(), i(), i(), i()]);
         }
+
+        let mut stack = Vec::new();
+        stack.push(root.clone_rc());
+
+        let mut test_sum = 0;
+        while let Some(r) = stack.pop() {
+            test_sum += r.data();
+            r.children().iter().for_each(|c| stack.push(c.clone_rc()));
+        }
+
+        assert_eq!(s, test_sum);
     }
 }
