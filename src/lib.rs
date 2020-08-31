@@ -1,7 +1,7 @@
-mod node;
-mod write_once_lock;
 mod merger;
+mod node;
 
+#[derive(Default, Debug)]
 struct MctsData {
     rollouts: usize,
     wins: usize,

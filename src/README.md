@@ -9,6 +9,9 @@ Ideas (not all will be implemented; these are just thoughts):
 - Perhaps one atomic "master" tree that threads will periodically merge into and then copy from
 - A shared hashmap of state values, so if a thread is exploring one node it can check if other threads are performing similar work
 - Threads can globally "reserve" nodes to explore to guarantee other threads are not wasting time exploring the same node.
+- How to prevent two threads from doing the same work? Two possibilities:
+1. They have different heurstics for deciding which node to explore
+1. They update some global registry of where they are looking, and "check out" a certain node for exploration.
 
 Challenges:
 - Make sure the threads are not wasting time duplicating the work of other threads
