@@ -213,7 +213,7 @@ mod tests {
         let mut i = move || {
             v += 1;
             *sum += v;
-            v
+            NoCopy(v)
         };
 
         let mut root = Node::new(i());
@@ -229,7 +229,7 @@ mod tests {
 
         let mut test_sum = 0;
         while let Some(r) = stack.pop() {
-            test_sum += r.data();
+            test_sum += r.data().0;
             r.children().iter().for_each(|c| stack.push(c.clone_rc()));
         }
 
