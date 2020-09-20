@@ -88,74 +88,76 @@ impl<T> Node<T> {
 mod tests {
     use super::*;
 
+    /// An i32 as a struct, to prevent it from implementing Copy,
+    /// which would be unrealistic for actual scenarios.
+    #[derive(Debug, PartialEq)]
+    struct NoCopy(i32);
+
     #[test]
     fn new_root_node() {
-        let root = Node::new(42);
+        let root = Node::new(NoCopy(42));
 
-        assert_eq!(42, *root.data());
+        assert_eq!(NoCopy(42), *root.data());
     }
 
     #[test]
     fn root_with_one_child() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(99);
+        root.add_child(NoCopy(99));
 
         let child_ref = &root.children()[0];
 
-        assert_eq!(99, *child_ref.data());
+        assert_eq!(NoCopy(99), *child_ref.data());
     }
 
     #[test]
     fn root_with_many_children() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(99);
-        root.add_child(50);
-        root.add_child(47);
-        root.add_child(12);
+        root.add_child(NoCopy(99));
+        root.add_child(NoCopy(50));
+        root.add_child(NoCopy(47));
+        root.add_child(NoCopy(12));
 
         let children_ref = root.children();
 
-        assert_eq!(99, *children_ref[0].data());
-        assert_eq!(50, *children_ref[1].data());
-        assert_eq!(47, *children_ref[2].data());
-        assert_eq!(12, *children_ref[3].data());
+        assert_eq!(NoCopy(99), *children_ref[0].data());
+        assert_eq!(NoCopy(50), *children_ref[1].data());
+        assert_eq!(NoCopy(47), *children_ref[2].data());
+        assert_eq!(NoCopy(12), *children_ref[3].data());
     }
 
     #[test]
     fn cannot_update_children_when_borrowing_children() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(50);
+        root.add_child(NoCopy(50));
 
-        // Won't build unless we limit the lifetime of the ref,
-        // as expected. (thought I thought modern Rust would auto-limit the lifetime...)
-        let data = {
-            let children = root.children();
-            assert_eq!(1, children.len());
-            *children[0].data()
-        };
+        let children = root.children();
+        assert_eq!(1, children.len());
+        let data = children[0].data();
 
-        root.add_child(49);
+        // Won't build -- cannot mutate while already borrowed. 
+        // root.add_child(NoCopy(49));
 
-        assert_eq!(50, data);
-        assert_eq!(2, root.children().len());
+        assert_eq!(&NoCopy(50), data);
+        assert_eq!(1, root.children().len());
     }
 
     #[test]
     fn multiple_layers_of_children() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(1);
-        root.add_child(2);
+        root.add_child(NoCopy(1));
+        root.add_child(NoCopy(2));
 
         // Should not panic
         let added_child = &root.children()[0];
-        added_child.add_all_children(vec![3, 4, 5]);
+        added_child.add_all_children(vec![NoCopy(3), NoCopy(4), NoCopy(5)]);
 
         let added_child2 = &root.children()[1];
-        added_child2.add_all_children(vec![6, 7, 8, 9]);
+        added_child2.add_all_children(vec![NoCopy(6), NoCopy(7), NoCopy(8), NoCopy(9)]);
 
         assert_eq!(2, root.children().len());
         assert_eq!(3, root.children()[0].children().len());
@@ -164,9 +166,9 @@ mod tests {
 
     #[test]
     fn parent_when_node_has_parent() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(1);
+        root.add_child(NoCopy(1));
 
         let child = &root.children()[0];
 
@@ -174,14 +176,14 @@ mod tests {
             .parent()
             .expect("In this test, the child *does* have a parent.");
 
-        assert_eq!(42, *parent.data());
+        assert_eq!(NoCopy(42), *parent.data());
     }
 
     #[test]
     fn parent_when_node_is_root() {
-        let mut root = Node::new(42);
+        let mut root = Node::new(NoCopy(42));
 
-        root.add_child(1);
+        root.add_child(NoCopy(1));
 
         let _child = &root.children()[0];
 
