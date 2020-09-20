@@ -27,7 +27,7 @@ impl<T> Node<T> {
         Self(self.get_rc_clone())
     }
 
-    pub fn add_all_children(&self, children_data: impl IntoIterator<Item = T>) {
+    pub fn add_all_children(&mut self, children_data: impl IntoIterator<Item = T>) {
         let this_node = self.get_rc();
         let mut children = children_data
             .into_iter()
@@ -52,6 +52,12 @@ impl<T> Node<T> {
         rc.children.borrow()
     }
 
+    pub fn children_mut(&mut self) -> RefMut<Vec<Self>> {
+        let rc = self.get_rc();
+
+        rc.children.borrow_mut()
+    }
+
     pub fn parent(&self) -> Option<Self> {
         let maybe_rc = self.get_rc().parent.upgrade();
 
@@ -62,6 +68,9 @@ impl<T> Node<T> {
         &self.0
     }
 
+    /// Consider removing this -- if we can expose the data
+    /// and the children as mut already, no need to expose the whole
+    /// Rc, you can just pick which you need.
     fn get_rc_mut(&mut self) -> &mut Rc<NodeInternal<T>> {
         &mut self.0
     }
@@ -70,7 +79,7 @@ impl<T> Node<T> {
         self.0.clone()
     }
 
-    fn add_child(&mut self, mut child_data: T) {
+    fn add_child(&mut self, child_data: T) {
         let internal = NodeInternal {
             data: child_data,
             parent: Rc::downgrade(self.get_rc()),
@@ -138,7 +147,7 @@ mod tests {
         assert_eq!(1, children.len());
         let data = children[0].data();
 
-        // Won't build -- cannot mutate while already borrowed. 
+        // Won't build -- cannot mutate while already borrowed.
         // root.add_child(NoCopy(49));
 
         assert_eq!(&NoCopy(50), data);
@@ -153,11 +162,15 @@ mod tests {
         root.add_child(NoCopy(2));
 
         // Should not panic
-        let added_child = &root.children()[0];
-        added_child.add_all_children(vec![NoCopy(3), NoCopy(4), NoCopy(5)]);
+        {
+            let added_child = &mut root.children_mut()[0];
+            added_child.add_all_children(vec![NoCopy(3), NoCopy(4), NoCopy(5)]);
+        }
 
-        let added_child2 = &root.children()[1];
-        added_child2.add_all_children(vec![NoCopy(6), NoCopy(7), NoCopy(8), NoCopy(9)]);
+        {
+            let added_child2 = &mut root.children_mut()[1];
+            added_child2.add_all_children(vec![NoCopy(6), NoCopy(7), NoCopy(8), NoCopy(9)]);
+        }
 
         assert_eq!(2, root.children().len());
         assert_eq!(3, root.children()[0].children().len());
@@ -203,11 +216,11 @@ mod tests {
             v
         };
 
-        let root = Node::new(i());
+        let mut root = Node::new(i());
 
         root.add_all_children(vec![i(), i(), i()]);
 
-        for child in root.children().iter() {
+        for child in root.children_mut().iter_mut() {
             child.add_all_children(vec![i(), i(), i(), i()]);
         }
 
