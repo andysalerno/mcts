@@ -4,12 +4,18 @@ use std::rc::{Rc, Weak};
 #[derive(Default, Debug)]
 pub struct Node<T>(Rc<NodeInternal<T>>);
 
+#[derive(Default, Debug, Copy, Clone)]
+struct MctsData {
+    rollouts: usize,
+    wins: usize,
+    is_saturated: bool,
+}
+
 #[derive(Default, Debug)]
 struct NodeInternal<T> {
     data: T,
     parent: Weak<Self>,
     children: RefCell<Vec<Node<T>>>,
-    // children: Vec<Node<T>>,
 }
 
 impl<T> Node<T> {
@@ -21,10 +27,6 @@ impl<T> Node<T> {
         };
 
         Self(Rc::new(internal))
-    }
-
-    pub fn clone_rc(&self) -> Self {
-        Self(self.get_rc_clone())
     }
 
     pub fn add_all_children(&mut self, children_data: impl IntoIterator<Item = T>) {
@@ -75,10 +77,6 @@ impl<T> Node<T> {
         &mut self.0
     }
 
-    fn get_rc_clone(&self) -> Rc<NodeInternal<T>> {
-        self.0.clone()
-    }
-
     fn add_child(&mut self, child_data: T) {
         let internal = NodeInternal {
             data: child_data,
@@ -90,6 +88,12 @@ impl<T> Node<T> {
             .children
             .borrow_mut()
             .push(Self(Rc::new(internal)));
+    }
+}
+
+impl<T> std::clone::Clone for Node<T> {
+    fn clone(&self) -> Self {
+        Self(Rc::clone(&self.0))
     }
 }
 
@@ -225,12 +229,12 @@ mod tests {
         }
 
         let mut stack = Vec::new();
-        stack.push(root.clone_rc());
+        stack.push(root.clone());
 
         let mut test_sum = 0;
         while let Some(r) = stack.pop() {
             test_sum += r.data().0;
-            r.children().iter().for_each(|c| stack.push(c.clone_rc()));
+            r.children().iter().for_each(|c| stack.push(c.clone()));
         }
 
         assert_eq!(s, test_sum);

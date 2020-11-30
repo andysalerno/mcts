@@ -1,0 +1,3 @@
+[submodule "reversi_rs"]
+	path = reversi_rs
+	url = https://github.com/andysalerno/reversi_rs.git

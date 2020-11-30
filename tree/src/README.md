@@ -15,3 +15,13 @@ Ideas (not all will be implemented; these are just thoughts):
 
 Challenges:
 - Make sure the threads are not wasting time duplicating the work of other threads
+
+
+multiple instances of trees that are totally isolated
+but every X iterations, the state of a tree is sync'd to a master instance
+(perhaps a hashtable of node state -> vec![node_data, ...] where tree instances push to the vec and another worker merges them all together)
+
+when does a tree instance sync/push to the master?
+consider: four instances are running, growing, getting edited.
+if no one has a lock on the tree, anyone can take it.
+if you try to take it and someone is using already, you just keep working.
